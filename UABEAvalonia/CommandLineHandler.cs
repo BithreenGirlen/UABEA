@@ -346,6 +346,89 @@ namespace UABEAvalonia
             return;
         }
 
+        private static void BatchExportDump(string[] args)
+        {
+            HashSet<string> flags = GetFlags(args);
+            string importDirectory = args[1];
+            string exportDirectory = args[2];
+            bool bJson = flags.Contains("-json");
+
+            if (!Directory.Exists(importDirectory))
+            {
+                Console.WriteLine("Directory does not exist!");
+                return;
+            }
+
+            var filePaths = Directory.EnumerateFiles(importDirectory, "*", SearchOption.AllDirectories);
+            foreach (string filePath in filePaths)
+            {
+                DetectedFileType fileType = FileTypeDetector.DetectFileType(filePath);
+                if (fileType != DetectedFileType.AssetsFile) continue;
+
+                using FileStream importFileStream = File.OpenRead(filePath);
+                AssetsFileInstance assetsFileInstance = new(importFileStream, filePath);
+
+                BundleWorkspace bundleWorkspace = new();
+                AssetWorkspace assetWorkspace = new(bundleWorkspace.am, false);
+                assetWorkspace.LoadAssetsFile(assetsFileInstance, false);
+
+                UnityContainer unityContainer = new();
+                if (UnityContainer.TryGetBundleContainerBaseField(assetWorkspace, assetsFileInstance, out AssetsFileInstance? actualFile, out AssetTypeValueField? ucontBaseField))
+                {
+                    unityContainer.FromAssetBundle(bundleWorkspace.am, actualFile, ucontBaseField);
+                }
+                else if (UnityContainer.TryGetRsrcManContainerBaseField(assetWorkspace, assetsFileInstance, out actualFile, out ucontBaseField))
+                {
+                    unityContainer.FromResourceManager(bundleWorkspace.am, actualFile, ucontBaseField);
+                }
+
+                if (actualFile == null || ucontBaseField == null) continue;
+
+                List<AssetContainer> assetContainers = new();
+                foreach (AssetFileInfo info in actualFile.file.AssetInfos)
+                {
+                    AssetContainer assetContainer = new(info, assetsFileInstance);
+                    string? path = unityContainer.GetContainerPath(assetContainer.AssetPPtr);
+                    if (path != null)
+                    {
+                        assetContainer.Container = path;
+                    }
+                    assetContainers.Add(assetContainer);
+                }
+
+                foreach (AssetContainer assetContainer in assetContainers)
+                {
+                    AssetTypeValueField? baseField = assetWorkspace.GetBaseField(assetContainer);
+                    if (baseField == null) continue;
+
+                    if (String.IsNullOrEmpty(assetContainer.Container)) continue;
+
+                    string dumpFilePath = Path.Combine(exportDirectory, assetContainer.Container);
+
+                    string? parentDirectory = Path.GetDirectoryName(dumpFilePath);
+                    if (String.IsNullOrEmpty(parentDirectory)) continue;
+                    Directory.CreateDirectory(parentDirectory);
+
+                    using FileStream exportFileStream = File.Open(dumpFilePath, FileMode.Create);
+                    using StreamWriter streamWriter = new StreamWriter(exportFileStream);
+
+                    AssetImportExport dumper = new AssetImportExport();
+                    if (bJson)
+                    {
+                        dumper.DumpJsonAsset(streamWriter, baseField);
+                    }
+                    else
+                    {
+                        dumper.DumpTextAsset(streamWriter, baseField);
+                    }
+
+                    Console.WriteLine($"{assetContainer.Container} dumpped");
+                }
+            }
+
+            Console.WriteLine("Done.");
+        }
+
         public static void CLHMain(string[] args)
         {
             if (args.Length < 2)
@@ -367,6 +450,10 @@ namespace UABEAvalonia
             else if (command == "applyemip")
             {
                 ApplyEmip(args);
+            }
+            else if (command == "batchexportdump")
+            {
+                BatchExportDump(args);
             }
         }
     }
