@@ -1,22 +1,18 @@
 <p align="center"><img src="UABEAvalonia/Assets/logo.png" /></p>
 
-**Quick Downloads:**
-
-[Latest Nightly (Windows)](https://nightly.link/nesrak1/UABEA/workflows/dotnet-desktop/master/uabea-windows.zip) | [Latest Nightly (Linux)](https://nightly.link/nesrak1/UABEA/workflows/dotnet-ubuntu/master/uabea-ubuntu.zip) | [Latest Release](https://github.com/nesrak1/UABEA/releases)
-
-[![GitHub issues](https://img.shields.io/github/issues/nesrak1/UABEA?logo=GitHub&style=flat-square)](https://github.com/nesrak1/UABEA/issues) [![discord](https://img.shields.io/discord/862035581491478558?label=discord&logo=discord&logoColor=FFFFFF&style=flat-square)](https://discord.gg/hd9VdswwZs)
-
 ## UABEAvalonia
+Fork from [UABEA](https://github.com/nesrak1/UABEA/tree/master), with ad-hoc command line interface to export multiple dumps.
 
-Cross-platform Asset Bundle/Serialized File reader and writer. Originally based on (but not a fork of) [UABE](https://github.com/SeriousCache/UABE).
+### Background
 
-## Extracting assets
+As far as I know, UABEA seems to be only tool that can dump `Naninovel` script, but lacks method to dump multiple files at one time.
 
-I develop UABEA as more of a modding/research tool than an extracting tool. Use [AssetRipper](https://github.com/AssetRipper/AssetRipper) or [AssetStudio](https://github.com/Perfare/AssetStudio/) if you only want to extract assets.
+### Command-line to export dumps
 
-## Addressables
-
-Many games are also now using addressables. You can tell if the bundle you're opening is part of addressables because it has the path `StreamingAssets/aa/XXX/something.bundle`. [If you want to edit these bundles, you will need to clear the CRC checks with the CRC cleaning tool here](https://github.com/nesrak1/AddressablesTools/releases). Use `Example patchcrc catalog.json`, then move or rename the old catalog.json file and rename catalog.json.patched to catalog.json.
+```
+UABEAvalonia batchexportdump <import directory> <export directory> -json
+```
+It is assumed that `<import directory>` is composed of decompressed `CAB` files. 
 
 ## Libraries
 
